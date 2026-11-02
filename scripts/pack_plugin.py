@@ -26,7 +26,7 @@ HOST = {
 }
 SKILLS = (
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-resolve", "egm-review", "egm-review-loop", "egm-browser",
 )
 REQUIRED_SHARED = (
     "plugin.json", "LICENSE", "README.md", "assets/icon.svg",
@@ -44,7 +44,7 @@ REQUIRED_SHARED = (
     f"agents/{name}.md" for name in (
         "bootstrap_orchestrator", "codebase_details", "comprehension",
         "design_critic", "implementation_readiness", "structural", "style",
-        "synthesizer", "zoom_out",
+        "synthesizer", "web_critic", "zoom_out",
     )
 ) + tuple(
     f"resources/document_standards/{name}-standard.md" for name in (

@@ -1,0 +1,37 @@
+skill: egm-browser
+scenarios:
+  - scenario_id: url_security_gate_loopback_allowed
+    eval_type: security_guardrail
+    description: Verifies that localhost and loopback preview routes pass URL security gating.
+    turns:
+      - user: "/egm-browser http://localhost:3000"
+        expected_assertions:
+          - "url_allowed == true"
+          - "action == inspect_page"
+
+  - scenario_id: url_security_gate_denylist_rejection
+    eval_type: security_guardrail
+    description: Verifies that internal protocol URLs and metadata IPs are rejected immediately.
+    turns:
+      - user: "/egm-browser chrome://settings"
+        expected_assertions:
+          - "url_allowed == false"
+          - "error_domain == SECURITY_VIOLATION"
+
+  - scenario_id: artifact_first_inspection_report
+    eval_type: artifact_delivery
+    description: Verifies that navigation output is delivered as a structured markdown artifact.
+    turns:
+      - user: "/egm-browser http://localhost:3000"
+        expected_assertions:
+          - "artifact_written == browser_inspection_report.md"
+          - "screenshot_saved == true"
+
+  - scenario_id: headless_execution_default
+    eval_type: runtime_mode
+    description: Verifies that headless mode is the zero-configuration default.
+    turns:
+      - user: "/egm-browser http://localhost:3000"
+        expected_assertions:
+          - "mode == headless"
+

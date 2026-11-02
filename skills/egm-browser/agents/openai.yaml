@@ -1,0 +1,7 @@
+interface:
+  display_name: "EGM Browser"
+  short_description: "Inspect live web apps and documentation"
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#1B6EF3"
+

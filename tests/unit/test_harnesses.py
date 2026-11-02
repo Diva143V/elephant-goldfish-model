@@ -24,7 +24,7 @@ MARKETPLACES = (
 )
 EXPECTED_SKILLS = {
     "egm-bootstrap", "egm-brainstorm", "egm-draft", "egm-drift-report",
-    "egm-resolve", "egm-review", "egm-review-loop",
+    "egm-resolve", "egm-review", "egm-review-loop", "egm-browser",
 }
 REVIEWERS = (
     "codebase_details", "comprehension", "design_critic",
