@@ -126,33 +126,45 @@ To guarantee that background Chrome instances do not become orphaned zombies upo
 *   **Session Registry**: Spawned PIDs are recorded in `.egm/browser-sessions.json`. Stale processes exceeding a 5-minute idle TTL are forcefully reaped on session initialization.
 
 ### 3. Display Mode & Headless Operation
-*   **Headless Default**: Standard invocations default to `--headless=new` for consistent rendering across local environments and CI runners.
-*   **Visible GUI Mode**: Invoked via `--visible`. The launcher executes a pre-flight display check:
+*   **Visible GUI Default**: Standard invocations default to visible mode (`--mode visible`) so the user can see the browser window and observe the agent's actuation live. The launcher executes a pre-flight display check:
     *   *Windows*: Verifies an active interactive desktop station (`winsta0\default`).
     *   *Linux*: Validates read/write access to `$DISPLAY` or `$WAYLAND_DISPLAY`.
     *   *macOS*: Validates connection to WindowServer.
     If no display is available (e.g. headless CI), the launcher gracefully degrades to `--headless=new` with a diagnostic warning rather than crashing.
+*   **Headless Mode**: Invoked via `--mode headless` when running non-intrusive background inspection or automated CI workflows.
 
 ### 4. Token Budgeting & DOM Pruning
-Raw accessibility trees and full DOM dumps frequently exceed 50,000–100,000 tokens. The skill enforces:
+
+#### Architectural Rationale for Default Ceilings
+Full accessibility trees and raw DOM dumps frequently exceed 50,000–100,000 tokens for modern single-page applications. Ingesting unpruned trees exhausts the host model's context window, degrading subsequent specification drafting by the Elephant and overwhelming zero-context Goldfish reviewers. The default ceilings are calibrated as follows:
 *   **Semantic Pruning**: Filter for interactive and semantic elements (`a`, `button`, `input`, `select`, `h1`-`h6`, `nav`, `main`), stripping unstyled `div`/`span` wrappers.
-*   **Depth Ceiling**: Maximum traversal depth of 4 levels from target landmark containers.
-*   **Token Cap**: Pruned trees must not exceed 2,000 tokens per capture.
-*   **Screenshot Compression**: Viewport captures resized to max 1024x768 with lossy WebP/JPEG compression (quality 75-80%), persisted to disk.
+*   **Depth Ceiling (Default: 4 levels)**: Captures major interactive landmarks and component layouts without traversing deeply nested structural containers.
+*   **Token Cap (Default: 2,000 tokens)**: Allocates sufficient budget for primary page landmarks while leaving 95%+ of the context window free for specification analysis.
+*   **Screenshot Format (Default: Full-Resolution Standard PNG)**: Captures viewport screenshots as crisp, uncompressed 1:1 PNGs without downscaling artifacts or subpixel distortion, preserving 100% visual fidelity for UI audits.
+
+#### User-Configurable Resource Overrides
+While default desktop rendering and 4-depth pruning serve standard inspection tasks, complex nested SPAs, mobile testing, or low-bandwidth environments can be configured on demand:
+*   `--viewport <width>x<height>`: Viewport dimensions (default: `normal` for standard desktop; custom values like `1920x1080` or `375x812` for mobile verification).
+*   `--max-depth <int>`: Traversal depth from landmark containers (default: `4`, e.g. `--max-depth 6` for deeply nested tab panels).
+*   `--token-limit <int>`: Token ceiling per capture (default: `2000`, e.g. `--token-limit 4000` for expansive data tables).
+*   `--quality <int>`: Image quality percentage (default: `100` for uncompressed PNG).
+
+If an automated capture truncates essential semantic elements due to boundary ceilings, the inspection report explicitly flags the truncation and surfaces the recommended CLI override command.
 
 ---
 
 ## Security & Operational Guardrails
 
 ### 1. Two-Layer URL Security Model
-*   **Denylist (Absolute Rejection)**:
-    *   Internal browser schemes: `chrome://*`, `chrome-extension://*`, `about:*`, `edge://*`.
-    *   Local filesystem schemes: `file://*` (handled via standard file-reading tools, not browser actuation).
-    *   Cloud metadata endpoints: `http://169.254.169.254/*`, `http://metadata.google.internal/*`.
+
+*   **Protocol Gate (Strict HTTP/HTTPS Only)**:
+    Rather than maintaining an incomplete and brittle denylist of internal browser protocols, `egm-browser` strictly restricts navigation schemes to `http://` and `https://` only (with `about:blank` permitted solely as an internal browser initialization target). All other schemes (`chrome://`, `chrome-extension://`, `edge://`, `about:*`, `file://`, `javascript:`, `data:`, `blob:`) are rejected immediately before process spawn or network connection.
+*   **Host Denylist (Immediate Rejection)**:
+    *   Cloud instance metadata endpoints: `http://169.254.169.254/*`, `http://metadata.google.internal/*`, `http://100.100.100.200/*`.
     *   Sensitive authentication routes unless explicitly authorized by the human operator.
-*   **Allowlist (Permitted Targets)**:
+*   **Host Allowlist (Permitted Targets)**:
     *   Loopback addresses: `http://localhost:*`, `http://127.0.0.1:*`, `http://[::1]:*`.
-    *   Whitelisted documentation hosts.
+    *   Allowlisted framework documentation hosts.
     *   User-confirmed external preview URLs.
 
 ### 2. State-Mutating Action Gates
