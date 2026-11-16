@@ -31,7 +31,7 @@ Spec-driven development of web applications, cloud consoles, developer portals, 
 
 ### In-Scope Goals
 *   **Interactive Inspection & Actuation**: Provide EGM agents with verified capabilities to navigate to target URLs, wait for network idle, click elements, fill form inputs, and capture DOM state.
-*   **Visual Evidence Capture**: Capture resized, compressed viewport screenshots (WebP/JPEG, max 1024x768) stored directly on disk and linked in markdown artifacts.
+*   **Visual Evidence Capture**: Capture full-fidelity viewport screenshots (defaulting to standard 1:1 uncompressed PNG with configurable dimension and quality overrides) stored directly on disk and linked in markdown artifacts.
 *   **Cross-Platform Launcher Bridge**: Provide a zero-dependency launcher ([`scripts/launch_browser.py`](file:///d:/egm%20skill/elephant-goldfish-model/scripts/launch_browser.py)) supporting Windows, macOS, and Linux with dynamic ephemeral port binding (`--remote-debugging-port=0`).
 *   **Asymmetric Read-Only Review Integration**: Generate static inspection artifacts (`browser_inspection_report.md`) that downstream EGM review subagents (`egm-review`, `web_critic`) can evaluate using standard read-only file tools (`Read`).
 *   **Deterministic Process Lifecycle**: Supervise child browser processes via Windows Job Objects (`JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE`) and POSIX process groups to prevent orphaned zombie processes.
@@ -52,7 +52,7 @@ Spec-driven development of web applications, cloud consoles, developer portals, 
     *   **The Elephant**: Orchestrates actuation, interacts with local development servers or documentation sites, and writes structured inspection reports and screenshots to disk.
     *   **The Goldfish**: Reviews the pre-rendered inspection artifacts in a fresh context, enforcing the spec rubric with zero side-effects and zero network access.
 *   **Isolated Profile Execution**: Browser automation operates strictly inside an isolated, disposable browser profile (`$TEMP/egm-browser-profile-*`), preventing access to personal user data, production session cookies, or saved credentials.
-*   **Two-Layer URL Security Boundary**: Access is strictly governed by a denylist (blocking internal browser schemes, credentials, and sensitive metadata endpoints) and an allowlist (defaulting to `localhost`, local dev ports, and user-confirmed domains).
+*   **Two-Layer URL Security Boundary**: Access is strictly governed by a positive protocol gate (restricting navigation to `http://` and `https://` only) and a host boundary (blocking cloud metadata IPs while allowlisting `localhost` preview routes and user-confirmed domains).
 *   **Artifact-First UX**: Raw HTML, DOM trees, and large traces must **NEVER** be dumped into the chat thread. All screenshots and audit summaries are written directly to markdown artifacts and surfaced via clean links.
 *   **Graceful Multi-Harness Degradation**: The skill actively probes for browser tools and display environments at runtime. If the active harness lacks browser actuation capabilities, it stops cleanly and prompts for manual developer input rather than hallucinating actions.
 
